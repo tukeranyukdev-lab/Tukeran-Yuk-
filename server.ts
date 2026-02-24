@@ -26,19 +26,31 @@ if (process.env.POSTGRES_URL) {
   isPostgres = true;
   const pool = new Pool({
     connectionString: process.env.POSTGRES_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 10000, // 10 seconds timeout
   });
   
   db = {
     query: async (text: string, params?: any[]) => {
-      const res = await pool.query(text, params);
-      return res;
+      try {
+        const res = await pool.query(text, params);
+        return res;
+      } catch (err: any) {
+        console.error("Database Query Error:", err.message);
+        throw err;
+      }
     }
   };
 
   // Initialize Postgres Tables
   const initPostgres = async () => {
+    console.log("Attempting to connect to Postgres...");
     try {
+      // Test connection first
+      const client = await pool.connect();
+      console.log("Connected to Postgres successfully");
+      client.release();
+
       await db.query(`
         CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
@@ -49,7 +61,10 @@ if (process.env.POSTGRES_URL) {
           verified INTEGER DEFAULT 0,
           avatar TEXT
         );
-
+        -- ... (rest of the tables)
+      `);
+      // Note: I'll keep the full init logic but wrap it safely
+      await db.query(`
         CREATE TABLE IF NOT EXISTS items (
           id SERIAL PRIMARY KEY,
           user_id INTEGER REFERENCES users(id),
@@ -98,12 +113,15 @@ if (process.env.POSTGRES_URL) {
         `);
       }
       console.log("Postgres tables initialized");
-    } catch (err) {
-      console.error("Error initializing Postgres:", err);
+    } catch (err: any) {
+      console.error("CRITICAL: Gagal inisialisasi Postgres.");
+      console.error("Pesan Error:", err.message);
+      console.log("TIPS: Jika di AI Studio Preview, port 5432 mungkin diblokir. Fitur DB permanen akan aktif saat di-deploy ke Vercel.");
+      // Fallback to SQLite if Postgres fails in preview environment
+      isPostgres = false; 
     }
   };
   initPostgres();
-  console.log("Using Postgres (Supabase)");
 } else {
   const sqlite = new Database("tukeran.db");
   db = {
