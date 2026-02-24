@@ -35,6 +35,74 @@ if (process.env.POSTGRES_URL) {
       return res;
     }
   };
+
+  // Initialize Postgres Tables
+  const initPostgres = async () => {
+    try {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          username TEXT UNIQUE,
+          email TEXT UNIQUE,
+          password TEXT,
+          rating REAL DEFAULT 5.0,
+          verified INTEGER DEFAULT 0,
+          avatar TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS items (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER REFERENCES users(id),
+          title TEXT,
+          description TEXT,
+          category TEXT,
+          condition TEXT,
+          estimated_value INTEGER,
+          wishlist TEXT,
+          location TEXT,
+          image_url TEXT,
+          status TEXT DEFAULT 'available',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS proposals (
+          id SERIAL PRIMARY KEY,
+          sender_id INTEGER REFERENCES users(id),
+          receiver_id INTEGER REFERENCES users(id),
+          sender_item_ids TEXT,
+          receiver_item_id INTEGER REFERENCES items(id),
+          cash_topup INTEGER DEFAULT 0,
+          status TEXT DEFAULT 'pending',
+          meeting_point_id INTEGER,
+          meeting_time TIMESTAMP,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS locations (
+          id SERIAL PRIMARY KEY,
+          name TEXT,
+          address TEXT,
+          type TEXT,
+          description TEXT,
+          image_url TEXT
+        );
+      `);
+
+      const locCheck = await db.query("SELECT COUNT(*) FROM locations");
+      if (parseInt(locCheck.rows[0].count) === 0) {
+        await db.query(`
+          INSERT INTO locations (name, address, type, description) VALUES 
+          ('Grand Indonesia Mall', 'Jl. M.H. Thamrin No.1, Jakarta', 'public', 'Titik temu ramai dan aman di pusat kota.'),
+          ('Kopi Kenangan - SCBD', 'South Quarter, Jakarta', 'partner', 'Partner resmi. Dapatkan diskon 10% saat barter di sini.'),
+          ('SBM Safe Zone - Menteng', 'Jl. Teuku Umar No.10, Jakarta', 'premium', 'Fasilitas premium dengan staff pengecekan barang dan CCTV 24 jam.')
+        `);
+      }
+      console.log("Postgres tables initialized");
+    } catch (err) {
+      console.error("Error initializing Postgres:", err);
+    }
+  };
+  initPostgres();
   console.log("Using Postgres (Supabase)");
 } else {
   const sqlite = new Database("tukeran.db");
