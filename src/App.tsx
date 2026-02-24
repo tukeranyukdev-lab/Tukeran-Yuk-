@@ -65,7 +65,7 @@ export default function App() {
             <div className="grid md:grid-cols-4 gap-12">
               <div className="col-span-2 space-y-6">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('home')}>
-                  <img src="./pages/logo_tukeranyuk.png" alt="TukeranYuk Logo" className="h-10 w-auto" />
+                  <img src="/logo_tukeranyuk.png" alt="TukeranYuk Logo" className="h-10 w-auto" />
                   <span className="hidden sm:block text-xl font-bold tracking-tight text-gray-900">
                     Tukeran<span className="text-brand-600">Yuk</span>
                   </span>
