@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, PlusCircle, User, LogOut } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import logo from '../logo_tukeranyuk.png';
 
 export const Navbar: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const { user, logout } = useAuth();
@@ -13,7 +14,7 @@ export const Navbar: React.FC<{ onNavigate: (page: string) => void }> = ({ onNav
             className="flex items-center gap-2 cursor-pointer" 
             onClick={() => onNavigate('home')}
           >
-            <img src="/logo_tukeranyuk.png" alt="TukeranYuk Logo" className="h-10 w-auto" />
+            <img src={logo} alt="Logo" alt="TukeranYuk Logo" className="h-10 w-auto" />
             <span className="hidden sm:block text-xl font-bold tracking-tight text-gray-900">
               Tukeran<span className="text-brand-600">Yuk</span>
             </span>
