@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, PlusCircle, User, LogOut, Repeat } from 'lucide-react';
+import { Search, PlusCircle, User, LogOut } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 export const Navbar: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
@@ -13,10 +13,8 @@ export const Navbar: React.FC<{ onNavigate: (page: string) => void }> = ({ onNav
             className="flex items-center gap-2 cursor-pointer" 
             onClick={() => onNavigate('home')}
           >
-            <div className="bg-brand-600 p-1.5 rounded-lg">
-              <Repeat className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-gray-900">
+            <img src="/logo_tukeranyuk.png" alt="TukeranYuk Logo" className="h-10 w-auto" />
+            <span className="hidden sm:block text-xl font-bold tracking-tight text-gray-900">
               Tukeran<span className="text-brand-600">Yuk</span>
             </span>
           </div>

@@ -69,11 +69,11 @@ export const Home: React.FC<{ onNavigate: (page: string, id?: number) => void }>
               animate={{ opacity: 1, scale: 1 }}
               className="relative"
             >
-              <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl border-8 border-white">
+              <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl border-8 border-white bg-gray-50">
                 <img 
-                  src="https://images.unsplash.com/photo-1556742049-0234c6495ff9?auto=format&fit=crop&q=80&w=1000" 
+                  src="/hero_background.jpg" 
                   alt="Barter Experience"
-                  className="w-full aspect-[4/5] object-cover"
+                  className="w-full h-auto block"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                 

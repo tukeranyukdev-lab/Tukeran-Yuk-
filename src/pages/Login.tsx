@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Repeat, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Mail, ArrowRight, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export const Login: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
@@ -30,8 +30,8 @@ export const Login: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavi
       >
         <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl border border-gray-100 space-y-8">
           <div className="text-center space-y-4">
-            <div className="bg-brand-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-brand-100">
-              <Repeat className="w-8 h-8 text-white" />
+            <div className="flex items-center justify-center mx-auto">
+              <img src="/logo_tukeranyuk.png" alt="TukeranYuk Logo" className="h-24 w-auto" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Selamat Datang Kembali</h1>

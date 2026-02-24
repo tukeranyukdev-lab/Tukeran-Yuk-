@@ -7,6 +7,7 @@ import { ItemDetails } from './pages/ItemDetails';
 import { PostItem } from './pages/PostItem';
 import { Dashboard } from './pages/Dashboard';
 import { Login } from './pages/Login';
+import { StaticPage } from './pages/StaticPage';
 import { AnimatePresence, motion } from 'motion/react';
 
 export default function App() {
@@ -27,6 +28,16 @@ export default function App() {
       case 'post-item': return <PostItem onNavigate={navigate} />;
       case 'dashboard': return <Dashboard onNavigate={navigate} />;
       case 'login': return <Login onNavigate={navigate} />;
+      case 'how-it-works':
+      case 'meeting-points':
+      case 'safe-zone':
+      case 'help-center':
+      case 'community-rules':
+      case 'security':
+      case 'contact':
+      case 'privacy':
+      case 'terms':
+        return <StaticPage type={currentPage} onNavigate={navigate} />;
       default: return <Home onNavigate={navigate} />;
     }
   };
@@ -53,15 +64,9 @@ export default function App() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid md:grid-cols-4 gap-12">
               <div className="col-span-2 space-y-6">
-                <div className="flex items-center gap-2">
-                  <div className="bg-brand-600 p-1.5 rounded-lg">
-                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }}>
-                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                    </motion.div>
-                  </div>
-                  <span className="text-xl font-bold tracking-tight text-gray-900">
+                <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('home')}>
+                  <img src="/logo_tukeranyuk.png" alt="TukeranYuk Logo" className="h-10 w-auto" />
+                  <span className="hidden sm:block text-xl font-bold tracking-tight text-gray-900">
                     Tukeran<span className="text-brand-600">Yuk</span>
                   </span>
                 </div>
@@ -73,26 +78,26 @@ export default function App() {
                 <h4 className="font-bold text-gray-900 mb-6">Platform</h4>
                 <ul className="space-y-4 text-sm text-gray-500">
                   <li><button onClick={() => navigate('marketplace')} className="hover:text-brand-600 transition-colors">Marketplace</button></li>
-                  <li><button className="hover:text-brand-600 transition-colors">Cara Kerja</button></li>
-                  <li><button className="hover:text-brand-600 transition-colors">Titik Temu Resmi</button></li>
-                  <li><button className="hover:text-brand-600 transition-colors">SBM Safe Zone</button></li>
+                  <li><button onClick={() => navigate('how-it-works')} className="hover:text-brand-600 transition-colors">Cara Kerja</button></li>
+                  <li><button onClick={() => navigate('meeting-points')} className="hover:text-brand-600 transition-colors">Titik Temu Resmi</button></li>
+                  <li><button onClick={() => navigate('safe-zone')} className="hover:text-brand-600 transition-colors">SBM Safe Zone</button></li>
                 </ul>
               </div>
               <div>
                 <h4 className="font-bold text-gray-900 mb-6">Bantuan</h4>
                 <ul className="space-y-4 text-sm text-gray-500">
-                  <li><button className="hover:text-brand-600 transition-colors">Pusat Bantuan</button></li>
-                  <li><button className="hover:text-brand-600 transition-colors">Aturan Komunitas</button></li>
-                  <li><button className="hover:text-brand-600 transition-colors">Keamanan</button></li>
-                  <li><button className="hover:text-brand-600 transition-colors">Hubungi Kami</button></li>
+                  <li><button onClick={() => navigate('help-center')} className="hover:text-brand-600 transition-colors">Pusat Bantuan</button></li>
+                  <li><button onClick={() => navigate('community-rules')} className="hover:text-brand-600 transition-colors">Aturan Komunitas</button></li>
+                  <li><button onClick={() => navigate('security')} className="hover:text-brand-600 transition-colors">Keamanan</button></li>
+                  <li><button onClick={() => navigate('contact')} className="hover:text-brand-600 transition-colors">Hubungi Kami</button></li>
                 </ul>
               </div>
             </div>
             <div className="pt-12 mt-12 border-t border-gray-50 flex flex-col md:flex-row justify-between items-center gap-6">
               <p className="text-xs text-gray-400">© 2024 TukeranYuk. Dibuat dengan ❤️ untuk komunitas barter Indonesia.</p>
               <div className="flex gap-6">
-                <button className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Kebijakan Privasi</button>
-                <button className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Syarat & Ketentuan</button>
+                <button onClick={() => navigate('privacy')} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Kebijakan Privasi</button>
+                <button onClick={() => navigate('terms')} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Syarat & Ketentuan</button>
               </div>
             </div>
           </div>
