@@ -5,6 +5,7 @@ export interface User {
   rating: number;
   verified: number;
   avatar: string;
+  role?: 'user' | 'admin';
 }
 
 export interface Item {

@@ -7,6 +7,8 @@ import { ItemDetails } from './pages/ItemDetails';
 import { PostItem } from './pages/PostItem';
 import { Dashboard } from './pages/Dashboard';
 import { Login } from './pages/Login';
+import { Register } from './pages/Register';
+import { AdminDashboard } from './pages/AdminDashboard';
 import { StaticPage } from './pages/StaticPage';
 import { AnimatePresence, motion } from 'motion/react';
 
@@ -28,6 +30,8 @@ export default function App() {
       case 'post-item': return <PostItem onNavigate={navigate} />;
       case 'dashboard': return <Dashboard onNavigate={navigate} />;
       case 'login': return <Login onNavigate={navigate} />;
+      case 'register': return <Register onNavigate={navigate} />;
+      case 'admin': return <AdminDashboard onNavigate={navigate} />;
       case 'how-it-works':
       case 'meeting-points':
       case 'safe-zone':
@@ -90,6 +94,7 @@ export default function App() {
                   <li><button onClick={() => navigate('community-rules')} className="hover:text-brand-600 transition-colors">Aturan Komunitas</button></li>
                   <li><button onClick={() => navigate('security')} className="hover:text-brand-600 transition-colors">Keamanan</button></li>
                   <li><button onClick={() => navigate('contact')} className="hover:text-brand-600 transition-colors">Hubungi Kami</button></li>
+                  <li><button onClick={() => navigate('admin')} className="text-[10px] text-gray-300 hover:text-brand-600 transition-colors mt-4">Admin Access</button></li>
                 </ul>
               </div>
             </div>

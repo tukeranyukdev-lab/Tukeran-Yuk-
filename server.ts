@@ -4,8 +4,12 @@ import Database from "better-sqlite3";
 import path from "path";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
+import { fileURLToPath } from "url";
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const db = new Database("tukeran.db");
 
@@ -18,9 +22,19 @@ db.exec(`
     password TEXT,
     rating REAL DEFAULT 5.0,
     verified INTEGER DEFAULT 0,
-    avatar TEXT
+    avatar TEXT,
+    role TEXT DEFAULT 'user'
   );
+`);
 
+// Migration: Add role column if it doesn't exist
+try {
+  db.prepare("SELECT role FROM users LIMIT 1").get();
+} catch (e) {
+  db.exec("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'");
+}
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -36,12 +50,14 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(user_id) REFERENCES users(id)
   );
+`);
 
+db.exec(`
   CREATE TABLE IF NOT EXISTS proposals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     sender_id INTEGER,
     receiver_id INTEGER,
-    sender_item_ids TEXT, -- JSON array
+    sender_item_ids TEXT,
     receiver_item_id INTEGER,
     cash_topup INTEGER DEFAULT 0,
     status TEXT DEFAULT 'pending',
@@ -51,16 +67,20 @@ db.exec(`
     FOREIGN KEY(sender_id) REFERENCES users(id),
     FOREIGN KEY(receiver_id) REFERENCES users(id)
   );
+`);
 
+db.exec(`
   CREATE TABLE IF NOT EXISTS locations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT,
     address TEXT,
-    type TEXT, -- 'public', 'partner', 'premium'
+    type TEXT,
     description TEXT,
     image_url TEXT
   );
+`);
 
+db.exec(`
   CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     proposal_id INTEGER,
@@ -80,13 +100,24 @@ if (locationCount.count === 0) {
   insertLoc.run("SBM Safe Zone - Menteng", "Jl. Teuku Umar No.10, Jakarta", "premium", "Fasilitas premium dengan staff pengecekan barang dan CCTV 24 jam.");
 }
 
+// Seed admin if not exists
+try {
+  const adminUser = db.prepare("SELECT * FROM users WHERE email = ?").get("admin@tukeranyuk.com") as any;
+  if (!adminUser) {
+    db.prepare("INSERT INTO users (username, email, avatar, role, verified) VALUES (?, ?, ?, ?, ?)")
+      .run("admin", "admin@tukeranyuk.com", "https://api.dicebear.com/7.x/avataaars/svg?seed=admin", "admin", 1);
+  } else if (adminUser.role !== 'admin') {
+    db.prepare("UPDATE users SET role = 'admin', verified = 1 WHERE email = ?").run("admin@tukeranyuk.com");
+  }
+} catch (e) {
+  console.log("Admin seeding skipped or failed:", e);
+}
+
 async function startServer() {
   const app = express();
   app.use(express.json());
 
-  // --- API Routes ---
-
-  // Items
+  // API Routes
   app.get("/api/items", (req, res) => {
     const items = db.prepare(`
       SELECT items.*, users.username as owner_name, users.avatar as owner_avatar 
@@ -117,7 +148,6 @@ async function startServer() {
     res.json({ id: info.lastInsertRowid });
   });
 
-  // Proposals
   app.post("/api/proposals", (req, res) => {
     const { sender_id, receiver_id, sender_item_ids, receiver_item_id, cash_topup } = req.body;
     const info = db.prepare(`
@@ -143,13 +173,11 @@ async function startServer() {
     res.json(proposals);
   });
 
-  // Locations
   app.get("/api/locations", (req, res) => {
     const locations = db.prepare("SELECT * FROM locations").all();
     res.json(locations);
   });
 
-  // AI Valuation (Gemini)
   app.post("/api/ai/valuation", async (req, res) => {
     const { item_name, condition, description } = req.body;
     try {
@@ -171,10 +199,8 @@ async function startServer() {
     }
   });
 
-  // Auth (Mock for demo)
   app.post("/api/auth/login", (req, res) => {
     const { email } = req.body;
-    // Simple mock: find or create user
     let user = db.prepare("SELECT * FROM users WHERE email = ?").get(email) as any;
     if (!user) {
       const username = email.split('@')[0];
@@ -182,6 +208,22 @@ async function startServer() {
       user = db.prepare("SELECT * FROM users WHERE id = ?").get(info.lastInsertRowid);
     }
     res.json(user);
+  });
+
+  app.post("/api/auth/register", (req, res) => {
+    const { username, email } = req.body;
+    try {
+      const info = db.prepare("INSERT INTO users (username, email, avatar) VALUES (?, ?, ?)").run(username, email, `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`);
+      const user = db.prepare("SELECT * FROM users WHERE id = ?").get(info.lastInsertRowid);
+      res.json(user);
+    } catch (e) {
+      res.status(400).json({ error: "Username atau email sudah digunakan" });
+    }
+  });
+
+  app.get("/api/admin/users", (req, res) => {
+    const users = db.prepare("SELECT * FROM users ORDER BY id DESC").all();
+    res.json(users);
   });
 
   // Vite integration
@@ -204,4 +246,4 @@ async function startServer() {
   });
 }
 
-startServer();
+startServer().catch(console.error);

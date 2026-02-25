@@ -46,7 +46,10 @@ export const Home: React.FC<{ onNavigate: (page: string, id?: number) => void }>
                   <span>Mulai Barter</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
-                <button className="bg-white text-gray-900 border border-gray-200 px-8 py-4 rounded-full font-bold hover:bg-gray-50 transition-all">
+                <button 
+                  onClick={() => onNavigate('how-it-works')}
+                  className="bg-white text-gray-900 border border-gray-200 px-8 py-4 rounded-full font-bold hover:bg-gray-50 transition-all"
+                >
                   Cara Kerja
                 </button>
               </div>

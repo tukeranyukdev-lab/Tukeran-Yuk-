@@ -40,6 +40,14 @@ export const Navbar: React.FC<{ onNavigate: (page: string) => void }> = ({ onNav
             
             {user ? (
               <>
+                {user.role === 'admin' && (
+                  <button 
+                    onClick={() => onNavigate('admin')}
+                    className="text-sm font-bold text-brand-600 hover:text-brand-700 transition-colors px-3 py-1 bg-brand-50 rounded-lg border border-brand-100"
+                  >
+                    Admin
+                  </button>
+                )}
                 <button 
                   onClick={() => onNavigate('post-item')}
                   className="flex items-center gap-1.5 bg-brand-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-brand-700 transition-all shadow-sm"

@@ -4,6 +4,7 @@ import { User } from '../types';
 interface AuthContextType {
   user: User | null;
   login: (email: string) => Promise<void>;
+  register: (username: string, email: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -33,13 +34,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('tukeran_user', JSON.stringify(userData));
   };
 
+  const register = async (username: string, email: string) => {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email }),
+    });
+    const userData = await res.json();
+    setUser(userData);
+    localStorage.setItem('tukeran_user', JSON.stringify(userData));
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('tukeran_user');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
