@@ -99,7 +99,7 @@ export default function App() {
               </div>
             </div>
             <div className="pt-12 mt-12 border-t border-gray-50 flex flex-col md:flex-row justify-between items-center gap-6">
-              <p className="text-xs text-gray-400">© 2024 TukeranYuk. Dibuat dengan ❤️ untuk komunitas barter Indonesia.</p>
+              <p className="text-xs text-gray-400">© 2026 TukeranYuk. Dibuat dengan ❤️ untuk komunitas barter Indonesia.</p>
               <div className="flex gap-6">
                 <button onClick={() => navigate('privacy')} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Kebijakan Privasi</button>
                 <button onClick={() => navigate('terms')} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Syarat & Ketentuan</button>
