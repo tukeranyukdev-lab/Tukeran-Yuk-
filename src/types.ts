@@ -6,6 +6,8 @@ export interface User {
   verified: number;
   avatar: string;
   role?: 'user' | 'admin';
+  is_premium?: number;
+  premium_until?: string;
 }
 
 export interface Item {
@@ -24,6 +26,7 @@ export interface Item {
   owner_name?: string;
   owner_avatar?: string;
   owner_rating?: number;
+  is_premium?: number;
 }
 
 export interface Proposal {

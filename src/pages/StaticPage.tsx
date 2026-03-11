@@ -151,14 +151,14 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type, onNavigate }) => {
                   <div className="bg-gray-100 p-2 rounded-lg">📧</div>
                   <div>
                     <p className="text-xs text-gray-400 uppercase font-bold">Email</p>
-                    <p className="font-medium">support@tukeranyuk.com</p>
+                    <p className="font-medium">tukeranyuk.dev@gmail.com</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100">
                   <div className="bg-gray-100 p-2 rounded-lg">📱</div>
                   <div>
                     <p className="text-xs text-gray-400 uppercase font-bold">WhatsApp</p>
-                    <p className="font-medium">+62 812-3456-7890</p>
+                    <p className="font-medium">+1 (202) 813-0412</p>
                   </div>
                 </div>
               </div>

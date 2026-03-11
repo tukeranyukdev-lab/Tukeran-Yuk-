@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
-import { Camera, Zap, Info, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Camera, Zap, Info, ArrowLeft, Loader2, CheckCircle2, Upload, Image as ImageIcon, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { motion } from 'motion/react';
+import { apiFetch } from '../utils/api';
+import { motion, AnimatePresence } from 'motion/react';
+import { GoogleGenAI } from '@google/genai';
 
 export const PostItem: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -16,22 +21,88 @@ export const PostItem: React.FC<{ onNavigate: (page: string) => void }> = ({ onN
     image_url: ''
   });
   const [isValuating, setIsValuating] = useState(false);
+  const [isLabeling, setIsLabeling] = useState(false);
   const [aiResult, setAiResult] = useState<any>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const handleAiLabeling = async (base64Data: string) => {
+    setIsLabeling(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-image",
+        contents: [
+          {
+            inlineData: {
+              mimeType: "image/jpeg",
+              data: base64Data.split(',')[1]
+            }
+          },
+          {
+            text: "Identifikasi barang dalam foto ini. Berikan kategori (pilih satu: Gadget, Kamera, Hobi, Elektronik, Kendaraan, Furniture) dan deskripsi singkat yang menarik. Berikan jawaban dalam format JSON: { \"title\": \"string\", \"category\": \"string\", \"description\": \"string\" }"
+          }
+        ],
+        config: { responseMimeType: "application/json" }
+      });
+      
+      const data = JSON.parse(response.text || "{}");
+      if (data.title) {
+        setFormData(prev => ({
+          ...prev,
+          title: data.title,
+          category: data.category || prev.category,
+          description: data.description || prev.description
+        }));
+      }
+    } catch (err) {
+      console.error("AI Labeling Error:", err);
+    } finally {
+      setIsLabeling(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setPreviewUrl(base64String);
+        setFormData({ ...formData, image_url: base64String });
+        handleAiLabeling(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setPreviewUrl(null);
+    setFormData({ ...formData, image_url: '' });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+  };
 
   const handleAiValuation = async () => {
     if (!formData.title) return alert('Masukkan nama barang dulu!');
     setIsValuating(true);
     try {
-      const res = await fetch('/api/ai/valuation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          item_name: formData.title,
-          condition: formData.condition,
-          description: formData.description
-        })
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `Berikan estimasi harga pasar (dalam Rupiah) untuk barang berikut di pasar barang bekas Indonesia (seperti OLX, Tokopedia, Facebook Marketplace):
+        Nama Barang: ${formData.title}
+        Kondisi: ${formData.condition}
+        Deskripsi: ${formData.description}
+        
+        Gunakan pencarian Google untuk mendapatkan tren harga terbaru dari marketplace barang bekas di Indonesia.
+        Berikan jawaban dalam format JSON: { "min_price": number, "max_price": number, "reasoning": "string" }`,
+        config: { 
+          tools: [{ googleSearch: {} }],
+          responseMimeType: "application/json" 
+        }
       });
-      const data = await res.json();
+      
+      const data = JSON.parse(response.text || "{}");
       setAiResult(data);
       setFormData({ ...formData, estimated_value: data.max_price.toString() });
     } catch (err) {
@@ -45,9 +116,8 @@ export const PostItem: React.FC<{ onNavigate: (page: string) => void }> = ({ onN
     e.preventDefault();
     if (!user) return;
     
-    const res = await fetch('/api/items', {
+    const res = await apiFetch('/api/items', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...formData,
         user_id: user.id,
@@ -78,22 +148,89 @@ export const PostItem: React.FC<{ onNavigate: (page: string) => void }> = ({ onN
           <p className="text-gray-500 mb-10">Lengkapi detail barang kamu untuk menarik minat barter.</p>
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Image Upload Placeholder */}
-            <div className="grid grid-cols-1 gap-6">
-              <div className="aspect-video bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-all group">
-                <div className="bg-white p-4 rounded-2xl shadow-sm mb-4 group-hover:scale-110 transition-transform">
-                  <Camera className="w-8 h-8 text-gray-400" />
+            {/* Image Upload Section */}
+            <div className="space-y-4">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Foto Barang</label>
+              
+              <div className="grid grid-cols-1 gap-4">
+                {previewUrl ? (
+                  <div className="relative aspect-video rounded-3xl overflow-hidden border border-gray-100 shadow-inner group">
+                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                    {isLabeling && (
+                      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center text-white">
+                        <Loader2 className="w-8 h-8 animate-spin mb-2" />
+                        <p className="text-xs font-bold uppercase tracking-widest">AI sedang mengenali barang...</p>
+                      </div>
+                    )}
+                    <button 
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute top-4 right-4 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-all backdrop-blur-sm"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="aspect-video bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center p-8 text-center">
+                    <div className="bg-white p-4 rounded-2xl shadow-sm mb-4">
+                      <Camera className="w-8 h-8 text-gray-300" />
+                    </div>
+                    <p className="text-sm font-bold text-gray-900">Belum ada foto</p>
+                    <p className="text-xs text-gray-400 mt-1 max-w-[200px]">Ambil foto langsung atau pilih dari galeri perangkat kamu.</p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button 
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
+                  >
+                    <Camera className="w-4 h-4 text-brand-600" />
+                    <span>Ambil Foto</span>
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
+                  >
+                    <Upload className="w-4 h-4 text-brand-600" />
+                    <span>Pilih File</span>
+                  </button>
                 </div>
-                <p className="text-sm font-bold text-gray-900">Upload Foto Barang</p>
-                <p className="text-xs text-gray-400 mt-1">Maksimal 5 foto • JPG, PNG</p>
+
+                <input 
+                  type="file" 
+                  ref={cameraInputRef}
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                    <ImageIcon className="w-4 h-4 text-gray-400" />
+                  </div>
+                  <input 
+                    type="text" 
+                    placeholder="Atau masukkan URL gambar..."
+                    value={formData.image_url.startsWith('data:') ? '' : formData.image_url}
+                    onChange={(e) => {
+                      setFormData({...formData, image_url: e.target.value});
+                      setPreviewUrl(e.target.value);
+                    }}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-brand-500 outline-none transition-all text-sm"
+                  />
+                </div>
               </div>
-              <input 
-                type="text" 
-                placeholder="Atau masukkan URL gambar..."
-                value={formData.image_url}
-                onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-                className="w-full px-6 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-brand-500 outline-none transition-all text-sm"
-              />
             </div>
 
             <div className="grid sm:grid-cols-2 gap-6">

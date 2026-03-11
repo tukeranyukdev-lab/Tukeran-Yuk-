@@ -1,6 +1,6 @@
 {
-  "name": "Tukeran Yuk - Secure Barter Marketplace",
-  "description": "Platform barter aman dengan titik temu terverifikasi, sistem rating, dan AI valuation untuk pertukaran barang yang adil.",
+  "name": "Tukeran Yuk - Platform Barter Aman & Terpercaya",
+  "description": "Tukeran Yuk adalah marketplace barter nomor 1 di Indonesia. Tukar barang bekas, gadget, hobi, dan koleksi dengan aman menggunakan sistem Escrow, SBM Safe Zone, dan verifikasi AI KYC.",
   "requestFramePermissions": [
     "geolocation"
   ]

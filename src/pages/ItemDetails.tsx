@@ -1,21 +1,36 @@
 import React, { useEffect, useState } from 'react';
-import { MapPin, ShieldCheck, Star, MessageCircle, Repeat, ArrowLeft, Info, Zap } from 'lucide-react';
+import { MapPin, ShieldCheck, Star, MessageCircle, Repeat, ArrowLeft, Info, Zap, Award } from 'lucide-react';
 import { Item, User } from '../types';
 import { useAuth } from '../hooks/useAuth';
+import { apiFetch } from '../utils/api';
 import { motion, AnimatePresence } from 'motion/react';
 
 export const ItemDetails: React.FC<{ id: number; onNavigate: (page: string, id?: number) => void }> = ({ id, onNavigate }) => {
   const [item, setItem] = useState<Item | null>(null);
+  const [analytics, setAnalytics] = useState<{ views: number; wishlists: number } | null>(null);
   const [showProposalModal, setShowProposalModal] = useState(false);
   const { user } = useAuth();
   const [myItems, setMyItems] = useState<Item[]>([]);
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
   const [cashTopup, setCashTopup] = useState(0);
+  const [locations, setLocations] = useState<any[]>([]);
+  const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null);
+  const [meetingTime, setMeetingTime] = useState('');
+  const [shippingMethod, setShippingMethod] = useState('COD');
+  const [shippingAddress, setShippingAddress] = useState('');
+  const [ownerBadges, setOwnerBadges] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch(`/api/items/${id}`).then(res => res.json()).then(setItem);
+    apiFetch(`/api/items/${id}`).then(res => res.json()).then(data => {
+      setItem(data);
+      if (data.user_id) {
+        apiFetch(`/api/users/${data.user_id}/badges`).then(res => res.json()).then(setOwnerBadges);
+      }
+    });
+    apiFetch(`/api/items/${id}/analytics`).then(res => res.json()).then(setAnalytics);
+    apiFetch('/api/locations').then(res => res.json()).then(setLocations);
     if (user) {
-      fetch('/api/items').then(res => res.json()).then(data => {
+      apiFetch('/api/items').then(res => res.json()).then(data => {
         setMyItems(data.filter((i: Item) => i.user_id === user.id));
       });
     }
@@ -23,21 +38,44 @@ export const ItemDetails: React.FC<{ id: number; onNavigate: (page: string, id?:
 
   const handlePropose = async () => {
     if (!user || !item) return;
-    const res = await fetch('/api/proposals', {
+    const res = await apiFetch('/api/proposals', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sender_id: user.id,
         receiver_id: item.user_id,
         sender_item_ids: selectedItemIds,
         receiver_item_id: item.id,
-        cash_topup: cashTopup
+        cash_topup: cashTopup,
+        meeting_point_id: selectedLocationId,
+        meeting_time: meetingTime,
+        shipping_method: shippingMethod,
+        shipping_address: shippingAddress,
+        escrow_amount: cashTopup
       })
     });
     if (res.ok) {
       alert('Proposal barter berhasil dikirim!');
       setShowProposalModal(false);
       onNavigate('dashboard');
+    }
+  };
+
+  const handleChat = async () => {
+    if (!user || !item) return onNavigate('login');
+    if (user.id === item.user_id) return alert('Ini barang kamu sendiri!');
+    
+    const res = await apiFetch('/api/conversations', {
+      method: 'POST',
+      body: JSON.stringify({
+        user1_id: user.id,
+        user2_id: item.user_id,
+        item_id: item.id
+      })
+    });
+    
+    if (res.ok) {
+      const conv = await res.json();
+      onNavigate('messages', conv.id);
     }
   };
 
@@ -90,6 +128,18 @@ export const ItemDetails: React.FC<{ id: number; onNavigate: (page: string, id?:
                 <ShieldCheck className="w-4 h-4 text-brand-600" />
                 <span>Terverifikasi</span>
               </div>
+              {analytics && (
+                <div className="flex items-center gap-4 border-l border-gray-200 pl-6">
+                  <div className="flex items-center gap-1">
+                    <span className="font-bold text-gray-900">{analytics.views}</span>
+                    <span>Dilihat</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="font-bold text-gray-900">{analytics.wishlists}</span>
+                    <span>Wishlist</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -126,9 +176,22 @@ export const ItemDetails: React.FC<{ id: number; onNavigate: (page: string, id?:
                   <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
                   <span className="text-xs text-gray-500 font-medium">{item.owner_rating || 5.0} • Member Sejak 2023</span>
                 </div>
+                {ownerBadges.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {ownerBadges.map((badge, idx) => (
+                      <div key={idx} className="flex items-center gap-1 px-2 py-0.5 bg-brand-50 text-brand-600 rounded-lg border border-brand-100">
+                        <Award className="w-2.5 h-2.5" />
+                        <span className="text-[7px] font-bold uppercase tracking-wider">{badge}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-            <button className="p-3 rounded-full bg-gray-50 text-gray-600 hover:bg-brand-50 hover:text-brand-600 transition-all">
+            <button 
+              onClick={handleChat}
+              className="p-3 rounded-full bg-gray-50 text-gray-600 hover:bg-brand-50 hover:text-brand-600 transition-all"
+            >
               <MessageCircle className="w-5 h-5" />
             </button>
           </div>
@@ -227,6 +290,72 @@ export const ItemDetails: React.FC<{ id: number; onNavigate: (page: string, id?:
                       />
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-4">Metode Pengiriman</h3>
+                      <select 
+                        value={shippingMethod}
+                        onChange={(e) => setShippingMethod(e.target.value)}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-brand-500 outline-none transition-all text-sm font-medium"
+                      >
+                        <option value="COD">COD (Ketemuan)</option>
+                        <option value="GoSend">GoSend</option>
+                        <option value="Grab">Grab Express</option>
+                        <option value="JNE">JNE</option>
+                      </select>
+                    </div>
+                    {shippingMethod === 'COD' ? (
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-4">Titik Temu (Safe Zone)</h3>
+                        <select 
+                          value={selectedLocationId || ''}
+                          onChange={(e) => setSelectedLocationId(Number(e.target.value))}
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-brand-500 outline-none transition-all text-sm font-medium"
+                        >
+                          <option value="">Pilih Titik Temu...</option>
+                          {locations.map(loc => (
+                            <option key={loc.id} value={loc.id}>{loc.name} ({loc.type})</option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-4">Alamat Pengiriman</h3>
+                        <input 
+                          type="text" 
+                          value={shippingAddress}
+                          onChange={(e) => setShippingAddress(e.target.value)}
+                          placeholder="Masukkan alamat lengkap..."
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-brand-500 outline-none transition-all text-sm font-medium"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {shippingMethod === 'COD' && (
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-4">Waktu Pertemuan</h3>
+                      <input 
+                        type="datetime-local" 
+                        value={meetingTime}
+                        onChange={(e) => setMeetingTime(e.target.value)}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-brand-500 outline-none transition-all text-sm font-medium"
+                      />
+                    </div>
+                  )}
+
+                  {cashTopup > 0 && (
+                    <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex items-start gap-3">
+                      <ShieldCheck className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="text-xs text-blue-800 font-bold">Sistem Rekber (Escrow) Aktif</p>
+                        <p className="text-[10px] text-blue-700 leading-relaxed">
+                          Uang tambahan sebesar Rp {cashTopup.toLocaleString()} akan ditahan oleh TukeranYuk dan baru dilepaskan ke pemilik barang setelah kamu mengonfirmasi penerimaan barang.
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="bg-brand-50 p-4 rounded-2xl border border-brand-100 flex items-start gap-3">
                     <Info className="w-5 h-5 text-brand-600 mt-0.5" />
